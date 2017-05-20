@@ -1,10 +1,15 @@
 package main
 
 import (
-	"errors"
 	"flag"
+	"fmt"
+	"net"
 	"os"
 
+	"net/http"
+
+	"github.com/SimonRichardson/crwlr/pkg/group"
+	"github.com/SimonRichardson/crwlr/pkg/static"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 )
@@ -15,16 +20,13 @@ func runStatic(args []string) error {
 	var (
 		flagset = flag.NewFlagSet("static", flag.ExitOnError)
 
-		debug = flagset.Bool("debug", false, "debug logging")
-		addr  = flagset.String("addr", defaultAddr, "addr to use for static creation")
+		debug   = flagset.Bool("debug", false, "debug logging")
+		apiAddr = flagset.String("api", defaultAPIAddr, "listen address for static APIs")
+		uiLocal = flagset.Bool("ui.local", true, "Use local files straight from the file system")
 	)
 	flagset.Usage = usageFor(flagset, "static [flags]")
 	if err := flagset.Parse(args); err != nil {
 		return err
-	}
-	if flagset.NFlag() == 0 {
-		// Nothing found.
-		return errorFor(flagset, "static [flags]", errors.New("specify at least argument"))
 	}
 
 	// Setup the logger.
@@ -39,7 +41,44 @@ func runStatic(args []string) error {
 		logger = level.NewFilter(logger, logLevel)
 	}
 
-	level.Debug(logger).Log("addr", *addr)
+	apiNetwork, apiAddress, err := parseAddr(*apiAddr, defaultAPIPort)
+	if err != nil {
+		return err
+	}
 
-	return nil
+	apiListener, err := net.Listen(apiNetwork, apiAddress)
+	if err != nil {
+		return err
+	}
+	level.Info(logger).Log("API", fmt.Sprintf("%s://%s", apiNetwork, apiAddress))
+
+	// Execution group.
+	var g group.Group
+	{
+		cancel := make(chan struct{})
+		g.Add(func() error {
+			<-cancel
+			return nil
+		}, func(error) {
+			close(cancel)
+		})
+	}
+	{
+		g.Add(func() error {
+			mux := http.NewServeMux()
+			mux.Handle("/", static.NewAPI(*uiLocal, logger))
+			return http.Serve(apiListener, mux)
+		}, func(error) {
+			apiListener.Close()
+		})
+	}
+	{
+		cancel := make(chan struct{})
+		g.Add(func() error {
+			return interrupt(cancel)
+		}, func(error) {
+			close(cancel)
+		})
+	}
+	return g.Run()
 }

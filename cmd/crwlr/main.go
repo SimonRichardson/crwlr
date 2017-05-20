@@ -14,7 +14,12 @@ import (
 var version = "dev"
 
 const (
-	defaultAddr string = "0.0.0.0:0"
+	defaultAPIPort = 7650
+	defaultAddr    = "0.0.0.0:0"
+)
+
+var (
+	defaultAPIAddr = fmt.Sprintf("tcp://0.0.0.0:%d", defaultAPIPort)
 )
 
 func usage() {
