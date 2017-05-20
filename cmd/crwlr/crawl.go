@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/SimonRichardson/crwlr/pkg/crawler"
 	"github.com/SimonRichardson/crwlr/pkg/group"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -44,7 +45,7 @@ func runCrawl(args []string) error {
 		logger = level.NewFilter(logger, logLevel)
 	}
 
-	level.Debug(logger).Log("domain", domain)
+	level.Debug(logger).Log("domain", *domain)
 
 	// Execution group.
 	var g group.Group
@@ -58,7 +59,15 @@ func runCrawl(args []string) error {
 		})
 	}
 	{
-		// TODO:
+		// Go consume the domain.
+		c := crawler.NewCrawler(logger)
+		c.Filter(crawler.Domain(*domain))
+
+		g.Add(func() error {
+			return c.Run(*domain)
+		}, func(error) {
+			c.Close()
+		})
 	}
 	{
 		// Setup os signal interruptions.
