@@ -13,12 +13,17 @@ import (
 
 var version = "dev"
 
+const (
+	defaultAddr string = "0.0.0.0:0"
+)
+
 func usage() {
 	fmt.Fprintf(os.Stderr, "USAGE\n")
 	fmt.Fprintf(os.Stderr, "  %s <mode> [flags]\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "MODES\n")
 	fmt.Fprintf(os.Stderr, "  crawl      Crawling service\n")
+	fmt.Fprintf(os.Stderr, "  static     Static template site for crawling\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "VERSION\n")
 	fmt.Fprintf(os.Stderr, "  %s (%s)\n", version, runtime.Version())
@@ -75,6 +80,8 @@ func main() {
 
 	var cmd command
 	switch strings.ToLower(os.Args[1]) {
+	case "static":
+		cmd = runStatic
 	case "crawl":
 		cmd = runCrawl
 	default:
