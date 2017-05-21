@@ -7,7 +7,9 @@
 
 <h1>{{.Heading}}</h1>
 
-<a href="{{.Link}}">Link</a>
+{{ range $index, $value := .Links }}
+<a href="{{ $value.HREF }}" attr="{{ $value.ATTR }}">{{ $value.Text }}</a><br />
+{{ end }}
 
 </body>
 </html>

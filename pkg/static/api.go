@@ -15,7 +15,7 @@ type API struct {
 // NewAPI returns a usable API for static templating content.
 func NewAPI(local bool, logger log.Logger) *API {
 	return &API{
-		fs:     FileSys(local),
+		fs:     TemplateFS(local, logger),
 		logger: logger,
 	}
 }

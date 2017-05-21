@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"net/url"
 	"os"
+
+	"strings"
 
 	"github.com/SimonRichardson/crwlr/pkg/crawler"
 	"github.com/SimonRichardson/crwlr/pkg/group"
@@ -22,6 +25,23 @@ func runCrawl(args []string) error {
 		addr  = flagset.String("addr", defaultAddr, "addr to start crawling")
 	)
 	flagset.Usage = usageFor(flagset, "crawl [flags]")
+
+	// Crawl can be used in a pipe constructor
+	// example: `crwlr static -output.addr=true | crwlr crawl`
+	if info, err := os.Stdin.Stat(); err == nil && (info.Mode()&os.ModeCharDevice) != os.ModeCharDevice {
+		// Read from the stdin for any possible pipe arguments.
+		var (
+			reader    = bufio.NewReader(os.Stdin)
+			line, err = reader.ReadString('\n')
+		)
+		if err != nil || (len(args) == 0 && len(line) == 0) {
+			return errorFor(flagset, "crawl [flags]", errors.New("specify addr for crawing via pipe"))
+		}
+
+		parts := strings.Split(strings.TrimSpace(line), " ")
+		args = append(args, parts...)
+	}
+
 	if err := flagset.Parse(args); err != nil {
 		return err
 	}

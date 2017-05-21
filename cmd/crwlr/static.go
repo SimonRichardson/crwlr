@@ -14,15 +14,23 @@ import (
 	"github.com/go-kit/kit/log/level"
 )
 
+const (
+	defaultUILocal      = true
+	defaultOutputAddr   = false
+	defaultOutputPrefix = "-addr="
+)
+
 // runStatic creates host to walk.
 func runStatic(args []string) error {
 	// flags for the static command
 	var (
 		flagset = flag.NewFlagSet("static", flag.ExitOnError)
 
-		debug   = flagset.Bool("debug", false, "debug logging")
-		apiAddr = flagset.String("api", defaultAPIAddr, "listen address for static APIs")
-		uiLocal = flagset.Bool("ui.local", true, "Use local files straight from the file system")
+		debug        = flagset.Bool("debug", false, "debug logging")
+		apiAddr      = flagset.String("api", defaultAPIAddr, "listen address for static APIs")
+		uiLocal      = flagset.Bool("ui.local", defaultUILocal, "Use local files straight from the file system")
+		outputAddr   = flagset.Bool("output.addr", defaultOutputAddr, "Output address writes the address to stdout")
+		outputPrefix = flagset.String("output.prefix", defaultOutputPrefix, "Output prefix prefixes the flag to the output.addr")
 	)
 	flagset.Usage = usageFor(flagset, "static [flags]")
 	if err := flagset.Parse(args); err != nil {
@@ -50,7 +58,15 @@ func runStatic(args []string) error {
 	if err != nil {
 		return err
 	}
-	level.Info(logger).Log("API", fmt.Sprintf("%s://%s", apiNetwork, apiAddress))
+	level.Debug(logger).Log("API", fmt.Sprintf("%s://%s", apiNetwork, apiAddress))
+
+	if *outputAddr {
+		addr := fmt.Sprintf("http://%s", apiAddress)
+		if prefix := *outputPrefix; prefix != "" {
+			addr = fmt.Sprintf("%s%s", prefix, addr)
+		}
+		fmt.Fprintln(os.Stdout, addr)
+	}
 
 	// Execution group.
 	var g group.Group
