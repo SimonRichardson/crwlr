@@ -61,7 +61,7 @@ func errorFor(fs *flag.FlagSet, name string, err error) error {
 		fmt.Fprintf(os.Stderr, "  %s\n", err.Error())
 		fmt.Fprintf(os.Stderr, "\n---------------------------------------------\n\n")
 
-		// Surpress the original error.
+		// Suppress the original error.
 		return errors.Errorf("")
 	}
 

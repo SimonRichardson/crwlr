@@ -40,7 +40,9 @@ func TemplateFS(useLocal bool, logger log.Logger) http.FileSystem {
 					Links: []link{
 						link{"/index", "Circular Reference", "Self"},
 						link{"/page", "Page", "Page"},
-						link{"/bad", "Bad Link", "Bad Link"},
+						link{"/bad", "Bad Link", "Bad"},
+						link{"http://google.com", "External Link", "External"},
+						link{"#anchor", "Anchor", "Anchor"},
 					},
 				},
 			},

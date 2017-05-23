@@ -4,3 +4,4 @@ import:
   - package: github.com/go-kit/kit
   - package: github.com/go-logfmt/logfmt
   - package: github.com/go-stack/stack
+  - package: golang.org/x/net/html

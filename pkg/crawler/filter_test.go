@@ -9,7 +9,9 @@ import (
 	"github.com/SimonRichardson/crwlr/pkg/test"
 )
 
-func TestFilterDomain(t *testing.T) {
+func TestFilterAddr(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Valid", func(t *testing.T) {
 		fn := func(a test.ASCII) bool {
 			var (
@@ -19,7 +21,7 @@ func TestFilterDomain(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			return Domain(h).Valid(u)
+			return Addr(u).Valid(u)
 		}
 
 		if err := quick.Check(fn, nil); err != nil {
@@ -30,13 +32,13 @@ func TestFilterDomain(t *testing.T) {
 	t.Run("Invalid", func(t *testing.T) {
 		fn := func(a, b test.ASCII) bool {
 			var (
-				h      = fmt.Sprintf("%s.com", a.String())
-				u, err = url.Parse(fmt.Sprintf("http://%s.com", b.String()))
+				h, err0 = url.Parse(fmt.Sprintf("http://%s.com", a.String()))
+				u, err1 = url.Parse(fmt.Sprintf("http://%s.com", b.String()))
 			)
-			if err != nil {
-				t.Error(err)
+			if err0 != nil || err1 != nil {
+				t.Errorf("errors %v %v", err0.Error(), err1.Error())
 			}
-			return !Domain(h).Valid(u)
+			return !Addr(h).Valid(u)
 		}
 
 		if err := quick.Check(fn, nil); err != nil {
@@ -53,7 +55,7 @@ func TestFilterDomain(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			return Domain(h).Valid(u)
+			return Addr(u).Valid(u)
 		}
 
 		if err := quick.Check(fn, nil); err != nil {

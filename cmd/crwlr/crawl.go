@@ -3,16 +3,29 @@ package main
 import (
 	"bufio"
 	"flag"
+	"net"
 	"net/url"
 	"os"
 
 	"strings"
 
+	"net/http"
+	"time"
+
 	"github.com/SimonRichardson/crwlr/pkg/crawler"
 	"github.com/SimonRichardson/crwlr/pkg/group"
+	"github.com/SimonRichardson/crwlr/pkg/peer"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
+)
+
+const (
+	defaultFollowRedirects  = true
+	defaultFilterSameDomain = true
+
+	defaultUserAgent      = "Mozilla/5.0 (compatible; crwlr/0.1; +http://crwlr.com)"
+	defaultUserAgentRobot = "Googlebot (crwlr/0.1)"
 )
 
 // runCrawl crawls a specific addr.
@@ -21,8 +34,12 @@ func runCrawl(args []string) error {
 	var (
 		flagset = flag.NewFlagSet("crawl", flag.ExitOnError)
 
-		debug = flagset.Bool("debug", false, "debug logging")
-		addr  = flagset.String("addr", defaultAddr, "addr to start crawling")
+		debug            = flagset.Bool("debug", false, "debug logging")
+		addr             = flagset.String("addr", defaultAddr, "addr to start crawling")
+		followRedirects  = flagset.Bool("follow-redirects", defaultFollowRedirects, "should the crawler follow redirects")
+		userAgent        = flagset.String("useragent.full", defaultUserAgent, "full user agent the crawler should use")
+		userAgentRobot   = flagset.String("useragent.robot", defaultUserAgentRobot, "robot user agent the crawler should use")
+		filterSameDomain = flagset.Bool("filter.same-domain", defaultFilterSameDomain, "filter other domains that aren't the same")
 	)
 	flagset.Usage = usageFor(flagset, "crawl [flags]")
 
@@ -70,6 +87,28 @@ func runCrawl(args []string) error {
 		return errorFor(flagset, "crawl [flags]", errors.Wrap(err, "expected valid domain"))
 	}
 
+	// Create the HTTP client that the crawler will use.
+	timeoutClient := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			ResponseHeaderTimeout: 5 * time.Second,
+			Dial: (&net.Dialer{
+				Timeout:   10 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout: 10 * time.Second,
+			DisableKeepAlives:   false,
+			MaxIdleConnsPerHost: 1,
+		},
+	}
+
+	// This allows us to prevent redirects on certain domains.
+	if !*followRedirects {
+		timeoutClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
+
 	// Execution group.
 	var g group.Group
 	{
@@ -83,8 +122,15 @@ func runCrawl(args []string) error {
 	}
 	{
 		// Go consume the domain.
-		c := crawler.NewCrawler(logger)
-		c.Filter(crawler.Addr(u))
+		var (
+			agent = peer.NewUserAgent(*userAgent, *userAgentRobot)
+			c     = crawler.NewCrawler(timeoutClient, agent, logger)
+		)
+
+		// This filter, only allows same domain
+		if *filterSameDomain {
+			c.Filter(crawler.Addr(u))
+		}
 
 		g.Add(func() error {
 			return c.Run(u)
