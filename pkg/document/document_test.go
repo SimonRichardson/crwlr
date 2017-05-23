@@ -2,13 +2,11 @@ package document
 
 import (
 	"net/url"
+	"reflect"
+	"strings"
 	"testing"
 
 	"golang.org/x/net/html"
-
-	"strings"
-
-	"reflect"
 
 	"github.com/go-kit/kit/log"
 )

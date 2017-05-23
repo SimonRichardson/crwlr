@@ -2,13 +2,10 @@ package crawler
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/SimonRichardson/crwlr/pkg/document"
 	"github.com/SimonRichardson/crwlr/pkg/peer"
@@ -24,8 +21,7 @@ type Crawler struct {
 	stack   chan *url.URL
 	stop    chan chan struct{}
 	peers   sync.Pool
-	mutex   sync.Mutex
-	metrics map[string]Metric
+	cache   *Cache
 	logger  log.Logger
 }
 
@@ -40,9 +36,8 @@ func NewCrawler(client *http.Client, agent *peer.UserAgent, logger log.Logger) *
 				return peer.NewAgent(client, agent, logger)
 			},
 		},
-		mutex:   sync.Mutex{},
-		metrics: map[string]Metric{},
-		logger:  logger,
+		cache:  NewCache(log.With(logger, "component", "cache")),
+		logger: logger,
 	}
 }
 
@@ -58,15 +53,12 @@ func (c *Crawler) Run(u *url.URL) error {
 	// Put the first url on the stack. This will be the starting position
 	go func() { c.stack <- u }()
 
-	var errs []string
 	for {
 		select {
 		case pop := <-c.stack:
-			// Make sure it's not already got a metric, if it hasn't make one!
-			if pop == nil || c.metric(pop) {
+			if pop == nil {
 				continue
 			}
-			c.newMetric(pop)
 
 			go func(u *url.URL) {
 				// Step 1. Request the url.
@@ -86,26 +78,13 @@ func (c *Crawler) Run(u *url.URL) error {
 
 				// Step 3. Look through and get the links as they come!
 				for _, link := range links {
-					if c.filtered(link) && !c.metric(link) {
-						fmt.Println(link.String())
+					if c.filtered(link) {
 						c.stack <- link
 					}
-				}
-
-				if len(links) == 0 && len(c.stack) == 0 {
-					close(c.stack)
 				}
 			}(pop)
 		}
 	}
-
-	fmt.Println("feck")
-
-	if len(errs) > 0 {
-		return errors.Errorf("crawler errors: %s", strings.Join(errs, ", "))
-	}
-
-	return nil
 }
 
 // Close terminates any workers currently executing.
@@ -113,23 +92,6 @@ func (c *Crawler) Close() {
 	q := make(chan struct{})
 	c.stop <- q
 	<-q
-}
-
-func (c *Crawler) metric(u *url.URL) bool {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	if _, ok := c.metrics[u.String()]; ok {
-		return true
-	}
-	return false
-}
-
-func (c *Crawler) newMetric(u *url.URL) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	c.metrics[u.String()] = Metric{}
 }
 
 func (c *Crawler) filtered(u *url.URL) bool {
@@ -175,9 +137,4 @@ func collect(body []byte, u *url.URL, logger log.Logger) (links []*url.URL, err 
 		return nil
 	})
 	return
-}
-
-type Metric struct {
-	Req      int
-	Duration time.Time
 }
