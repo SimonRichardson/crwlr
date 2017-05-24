@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/pkg/errors"
+	"github.com/temoto/robotstxt"
 )
 
 // Cache returns a metric cache of urls visited along with misses, errors and
@@ -58,8 +59,28 @@ func (c *Cache) Set(v string, m *Metric) {
 
 // Metric holds some very simple primitive metric values for reporting.
 type Metric struct {
-	Requested, Received, Errorred *Clock
-	Duration                      time.Duration
+	Requested, Received *Clock
+	Filtered, Errorred  *Clock
+	Duration            time.Duration
+	Robots              *robotstxt.RobotsData
+}
+
+// NewMetric creates a new Metric
+func NewMetric() *Metric {
+	return &Metric{
+		Requested: NewClock(),
+		Received:  NewClock(),
+		Filtered:  NewClock(),
+		Errorred:  NewClock(),
+		Duration:  0,
+	}
+}
+
+// WithRobots returns a new Metric with the associated robots data
+func (m *Metric) WithRobots(r *robotstxt.RobotsData) *Metric {
+	return &Metric{
+		Robots: r,
+	}
 }
 
 // Clock defines a metric for monitoring how many times something occurred.

@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"text/tabwriter"
 
 	"strings"
 
@@ -23,6 +24,8 @@ import (
 const (
 	defaultFollowRedirects  = true
 	defaultFilterSameDomain = true
+	defaultRobotsRequest    = true
+	defaultRobotsCrawlDelay = false
 
 	defaultUserAgent      = "Mozilla/5.0 (compatible; crwlr/0.1; +http://crwlr.com)"
 	defaultUserAgentRobot = "Googlebot (crwlr/0.1)"
@@ -36,10 +39,13 @@ func runCrawl(args []string) error {
 
 		debug            = flagset.Bool("debug", false, "debug logging")
 		addr             = flagset.String("addr", defaultAddr, "addr to start crawling")
+		report           = flagset.Bool("report", true, "report the outcomes of the crawl")
 		followRedirects  = flagset.Bool("follow-redirects", defaultFollowRedirects, "should the crawler follow redirects")
 		userAgent        = flagset.String("useragent.full", defaultUserAgent, "full user agent the crawler should use")
 		userAgentRobot   = flagset.String("useragent.robot", defaultUserAgentRobot, "robot user agent the crawler should use")
 		filterSameDomain = flagset.Bool("filter.same-domain", defaultFilterSameDomain, "filter other domains that aren't the same")
+		robotsRequest    = flagset.Bool("robots.request", defaultRobotsRequest, "request the robots.txt when crawling")
+		robotsCrawlDelay = flagset.Bool("robots.crawl-delay", defaultRobotsCrawlDelay, "use the robots.txt crawl delay when crawling")
 	)
 	flagset.Usage = usageFor(flagset, "crawl [flags]")
 
@@ -124,7 +130,8 @@ func runCrawl(args []string) error {
 		// Go consume the domain.
 		var (
 			agent = peer.NewUserAgent(*userAgent, *userAgentRobot)
-			c     = crawler.NewCrawler(timeoutClient, agent, logger)
+			c     = crawler.NewCrawler(timeoutClient, agent, *robotsRequest, *robotsCrawlDelay, logger)
+			began = time.Now()
 		)
 
 		// Filter only on the same domain i.e. don't crawl the internet.
@@ -135,6 +142,13 @@ func runCrawl(args []string) error {
 		g.Add(func() error {
 			return c.Run(u)
 		}, func(error) {
+			if *report {
+
+				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+				c.Report(time.Since(began)).Write(w)
+				w.Flush()
+			}
+
 			c.Close()
 		})
 	}

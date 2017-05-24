@@ -1,0 +1,5 @@
+User-agent: *
+{{ range $index, $value := .Links }}
+Disallow: {{ $value.HREF }}
+{{ end }}
+Crawl-delay: 1

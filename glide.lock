@@ -1,5 +1,5 @@
-hash: 51dcfc2d6073172f32e8bc296d21dbd9aa799d56e3623c5eebdc47d514140ccf
-updated: 2017-05-23T14:24:48.385353676+01:00
+hash: f5ce07b49ab95527460a3bf365ed15c653ad727fcec700fe750eef66478916e3
+updated: 2017-05-24T14:08:43.597981244+01:00
 imports:
 - name: github.com/go-kit/kit
   version: d67bb4c202e3b91377d1079b110a6c9ce23ab2f8
@@ -14,8 +14,11 @@ imports:
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/pkg/errors
   version: c605e284fe17294bda444b34710735b29d1a9d90
+- name: github.com/temoto/robotstxt
+  version: 5f8637625d1077e19c85b5ae96c2f0f5bb476177
 - name: golang.org/x/net
-  version: 5961165da77ad3a2abf3a77ea904c13a76b0b073
+  version: 445979b94b42a1f13fdf26e8bf839a566e9796f9
   subpackages:
   - html
+  - html/atom
 testImports: []

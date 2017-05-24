@@ -200,6 +200,16 @@ AAD//wC0eNLwAAAA
 `,
 	},
 
+	"/templates/robots.tmpl": {
+		local:   "templates/robots.tmpl",
+		size:    104,
+		modtime: 1495641675,
+		compressed: `
+H4sIAAAAAAAA/wotTi3STUxPzSuxUtDiqq5WKErMS09VUMnMS0mt0FFQKUvMKU1VsLJV0PPJzMsuVqit
+5XLJLE7Myckvt1KoroYq0PMIcnUDyVVXK6TmpYBYzkWJ5Tm6Kak5iZVWCoZcgAAAAP//FDnnj2gAAAA=
+`,
+	},
+
 	"/": {
 		isDir: true,
 		local: "",
