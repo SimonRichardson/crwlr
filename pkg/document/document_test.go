@@ -29,7 +29,7 @@ func TestWalk(t *testing.T) {
 			actual int
 			doc    = NewDocument(u, node, log.NewNopLogger())
 		)
-		doc.Walk(func(node *html.Node, err error) error {
+		doc.Walk(func(node *html.Node) error {
 			actual++
 			return nil
 		})
@@ -91,7 +91,7 @@ func TestWalkLinks(t *testing.T) {
 			actual []string
 			doc    = NewDocument(u, node, log.NewNopLogger())
 		)
-		doc.WalkLinks(func(url *url.URL, err error) error {
+		doc.WalkLinks(func(url *url.URL) error {
 			actual = append(actual, url.String())
 			return nil
 		})

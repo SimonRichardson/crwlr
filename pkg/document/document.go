@@ -2,7 +2,6 @@ package document
 
 import (
 	"bytes"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -30,29 +29,30 @@ func NewDocument(url *url.URL, node *html.Node, logger log.Logger) *Document {
 }
 
 // Walk walks through the Document node by node.
-func (d *Document) Walk(fn func(*html.Node, error) error) error {
-	var f func(*html.Node, error) error
-	f = func(n *html.Node, err error) error {
+func (d *Document) Walk(fn func(*html.Node) error) error {
+	var f func(*html.Node) error
+	f = func(n *html.Node) error {
 		if n.Type == html.ElementNode {
-			err = fn(n, err)
-		}
-
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			err = f(c, err)
-			if err != nil {
+			if err := fn(n); err != nil {
 				return err
 			}
 		}
 
-		return err
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			if err := f(c); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
-	return f(d.node, nil)
+	return f(d.node)
 }
 
 // WalkLinks walks through all the Documents nodes links.
 // Note: it will normalize the documents links to the documents url.
-func (d *Document) WalkLinks(fn func(*url.URL, error) error) error {
-	return d.Walk(func(node *html.Node, err error) error {
+func (d *Document) WalkLinks(fn func(*url.URL) error) error {
+	return d.Walk(func(node *html.Node) error {
 		// We only care about "anchor" links
 		if node.DataAtom == atom.A {
 			for _, a := range node.Attr {
@@ -64,22 +64,22 @@ func (d *Document) WalkLinks(fn func(*url.URL, error) error) error {
 					}
 
 					// If it's a relative url to the root, then normalize it.
-					var u string
-					if strings.HasPrefix(a.Val, "/") {
-						u = fmt.Sprintf("%s%s", host(d.url), a.Val)
-					} else {
-						u = a.Val
+					n, err := url.Parse(a.Val)
+					if err != nil {
+						level.Debug(d.logger).Log("url", a.Val, "err", err)
+						break
 					}
 
-					// Make sure it's a valid url.
 					var norm *url.URL
-					if norm, err = url.Parse(u); err != nil {
-						level.Debug(d.logger).Log("url", u, "err", err)
-						return err
+					if strings.HasPrefix(a.Val, "/") {
+						norm = d.url.ResolveReference(n)
+					} else {
+						norm = n
 					}
 
-					if err = fn(norm, err); err != nil {
-						return err
+					if err := fn(norm); err != nil {
+						level.Debug(d.logger).Log("url", norm, "err", err)
+						break
 					}
 				}
 			}

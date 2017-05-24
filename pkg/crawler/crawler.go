@@ -10,6 +10,7 @@ import (
 	"github.com/SimonRichardson/crwlr/pkg/document"
 	"github.com/SimonRichardson/crwlr/pkg/peer"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"golang.org/x/net/html"
 )
@@ -51,7 +52,9 @@ func (c *Crawler) Filter(f Filter) {
 // Run executes the list of urls on the crawler stack
 func (c *Crawler) Run(u *url.URL) error {
 	// Put the first url on the stack. This will be the starting position
-	go func() { c.stack <- u }()
+	go func() {
+		c.stack <- u
+	}()
 
 	for {
 		select {
@@ -103,6 +106,7 @@ func (c *Crawler) filtered(u *url.URL) bool {
 	return true
 }
 
+// Request a document and read it's response body
 func request(agent *peer.Agent, u *url.URL) (body []byte, err error) {
 	var resp *http.Response
 	if resp, err = agent.Request(peer.NewAgentContext(u)); err != nil {
@@ -121,6 +125,7 @@ func request(agent *peer.Agent, u *url.URL) (body []byte, err error) {
 	return
 }
 
+// Collect all the links with in a document
 func collect(body []byte, u *url.URL, logger log.Logger) (links []*url.URL, err error) {
 	var node *html.Node
 	if node, err = html.Parse(bytes.NewBuffer(body)); err != nil {
@@ -128,9 +133,11 @@ func collect(body []byte, u *url.URL, logger log.Logger) (links []*url.URL, err 
 	}
 
 	doc := document.NewDocument(u, node, log.With(logger, "component", "document"))
-	err = doc.WalkLinks(func(url *url.URL, err error) error {
+	err = doc.WalkLinks(func(url *url.URL) error {
+		// Ignore bad links, as we want the system to be resilient
 		if err != nil {
-			return err
+			level.Error(logger).Log("err", err, "url", url)
+			return nil
 		}
 
 		links = append(links, url)

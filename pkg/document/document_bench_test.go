@@ -43,7 +43,7 @@ func BenchmarkWalk(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		doc.Walk(func(node *html.Node, err error) error {
+		doc.Walk(func(node *html.Node) error {
 			actual++
 			return nil
 		})
@@ -83,7 +83,7 @@ func BenchmarkLinks(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		doc.WalkLinks(func(url *url.URL, err error) error {
+		doc.WalkLinks(func(url *url.URL) error {
 			actual++
 			return nil
 		})

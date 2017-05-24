@@ -39,20 +39,34 @@ func TemplateFS(useLocal bool, logger log.Logger) http.FileSystem {
 					Heading: "Index",
 					Links: []link{
 						link{"/index", "Circular Reference", "Self"},
-						link{"/page", "Page", "Page"},
+						link{"/page1", "Page 1", "Page 1"},
 						link{"/bad", "Bad Link", "Bad"},
 						link{"http://google.com", "External Link", "External"},
 						link{"#anchor", "Anchor", "Anchor"},
 					},
 				},
 			},
-			"/page": &file{
+			"/page1": &file{
 				name:     "page",
 				local:    "/templates/index.tmpl",
 				template: true,
 				data: page{
-					Title:   "Page",
-					Heading: "Page",
+					Title:   "Page 1",
+					Heading: "Page 1",
+					Links: []link{
+						link{"/page1", "Circular Reference", "Self"},
+						link{"/page2", "Page 2", "Page 2"},
+						link{"/index", "Index", "Index"},
+					},
+				},
+			},
+			"/page2": &file{
+				name:     "page",
+				local:    "/templates/index.tmpl",
+				template: true,
+				data: page{
+					Title:   "Page 2",
+					Heading: "Page 2",
 					Links: []link{
 						link{"/page", "Circular Reference", "Self"},
 						link{"/index", "Index", "Index"},

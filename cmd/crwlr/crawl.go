@@ -127,7 +127,7 @@ func runCrawl(args []string) error {
 			c     = crawler.NewCrawler(timeoutClient, agent, logger)
 		)
 
-		// This filter, only allows same domain
+		// Filter only on the same domain i.e. don't crawl the internet.
 		if *filterSameDomain {
 			c.Filter(crawler.Addr(u))
 		}
