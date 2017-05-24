@@ -9,6 +9,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 // Document wraps a html document (page) so that we can extract all the relavent
@@ -53,7 +54,7 @@ func (d *Document) Walk(fn func(*html.Node, error) error) error {
 func (d *Document) WalkLinks(fn func(*url.URL, error) error) error {
 	return d.Walk(func(node *html.Node, err error) error {
 		// We only care about "anchor" links
-		if node.Data == "a" {
+		if node.DataAtom == atom.A {
 			for _, a := range node.Attr {
 				// Pluck the "href" from all "a" links.
 				if a.Key == "href" {
