@@ -23,7 +23,7 @@ func (r *Report) Write(w io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintln(w, "URL\tDuration (ms)\tRequested\tReceived\tFiltered\tErrorred\t")
+	fmt.Fprintln(w, "URL\tAvg Duration (ms)\tRequested\tReceived\tFiltered\tErrorred\t")
 	for k, v := range rows {
 		fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\t%d\t\n",
 			k,
@@ -56,7 +56,11 @@ func (c *row) Add(m *Metric) {
 	c.Errorred += int(m.Errorred.Time())
 
 	c.TotalDuration += m.Duration
-	c.Duration = c.TotalDuration / time.Duration(c.Received)
+	c.Duration = c.TotalDuration
+	// Prevent division by zero
+	if c.Received > 0 {
+		c.Duration = c.TotalDuration / time.Duration(c.Received)
+	}
 }
 
 // Aggregate, takes a cache and removes any possible duplication and aggregates

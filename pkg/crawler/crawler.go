@@ -35,6 +35,7 @@ type Crawler struct {
 	robotsRequest    bool
 	robotsCrawlDelay bool
 	done             bool
+	gauge            *Gauge
 	logger           log.Logger
 }
 
@@ -54,6 +55,7 @@ func NewCrawler(client *http.Client, agent *peer.UserAgent, robotsRequest, robot
 		cache:            NewCache(log.With(logger, "component", "cache")),
 		robotsRequest:    robotsRequest,
 		robotsCrawlDelay: robotsCrawlDelay,
+		gauge:            NewGauge(),
 		logger:           logger,
 	}
 }
@@ -67,9 +69,8 @@ func (c *Crawler) Filter(f Filter) {
 
 // Run executes the list of urls on the crawler stack
 func (c *Crawler) Run(u *url.URL) error {
-	gauge := NewGauge()
-	gauge.Increment()
-
+	// Increment the gauge when we add a url.
+	c.gauge.Increment()
 	go func() { c.stack <- u }()
 
 loop:
@@ -80,7 +81,8 @@ loop:
 				return errors.Errorf("unexpected stack url")
 			}
 
-			if gauge.Value() < 1 {
+			// Check to see if we're done or not.
+			if c.gauge.Value() < 1 {
 				c.done = true
 				break loop
 			}
@@ -89,6 +91,7 @@ loop:
 				continue
 			}
 
+			// Check to see if we need to request robots.txt
 			if c.robotsRequest {
 				// Get the robots for a giving host
 				group := c.getRobotsGroup(v)
@@ -99,66 +102,14 @@ loop:
 				} else {
 					// If the path is not allowed in the robots group, cache
 					// the path, so it will be bypassed if requested again.
-					gauge.Decrement()
+					go c.gauge.Decrement()
 					c.assignFilterMetric(v)
 				}
 			}
 
 			// We can run parallel now, as we've taken into consideration the
 			// crawl delay.
-			go func(u *url.URL) {
-				str := u.String()
-				// We don't need to match existing ones
-				metric, err := c.cache.Get(str)
-				if err == nil {
-					metric.Requested.Increment()
-					go gauge.Decrement()
-					return
-				}
-				// Make sure we do have a metric
-				if metric == nil {
-					metric = NewMetric()
-					c.cache.Set(str, metric)
-				}
-
-				began := time.Now()
-				metric.Requested.Increment()
-
-				level.Debug(c.logger).Log("url", str)
-
-				body, err := c.request(v, checkResponseStatus)
-				if err != nil {
-					metric.Errorred.Increment()
-					return
-				}
-
-				links, err := c.collect(body, v)
-				if err != nil {
-					metric.Errorred.Increment()
-					return
-				}
-
-				metric.Received.Increment()
-				metric.Duration = time.Since(began)
-
-				for _, u := range links {
-					// Preemptively remove any links that we know are invalid
-					// or essentially a no-op.
-					if !c.filtered(u) {
-						continue
-					}
-					if c.cache.Exists(u.String()) {
-						c.assignFilterMetric(u)
-						continue
-					}
-
-					// Increment the gauge
-					gauge.Increment()
-					go func(u *url.URL) { c.stack <- u }(u)
-				}
-
-				go gauge.Decrement()
-			}(v)
+			go c.fetch(v)
 
 		case q := <-c.stop:
 			close(q)
@@ -192,6 +143,60 @@ func (c *Crawler) filtered(u *url.URL) bool {
 		}
 	}
 	return true
+}
+
+func (c *Crawler) fetch(u *url.URL) {
+	str := u.String()
+	// We don't need to match existing ones
+	metric, err := c.cache.Get(str)
+	if err == nil {
+		metric.Requested.Increment()
+		go c.gauge.Decrement()
+		return
+	}
+	// Make sure we do have a metric
+	if metric == nil {
+		metric = NewMetric()
+		c.cache.Set(str, metric)
+	}
+
+	began := time.Now()
+	metric.Requested.Increment()
+
+	level.Debug(c.logger).Log("url", str)
+
+	body, err := c.request(u, checkResponseStatus)
+	if err != nil {
+		metric.Errorred.Increment()
+		return
+	}
+
+	links, err := c.collect(body, u)
+	if err != nil {
+		metric.Errorred.Increment()
+		return
+	}
+
+	metric.Received.Increment()
+	metric.Duration = time.Since(began)
+
+	for _, u := range links {
+		// Preemptively remove any links that we know are invalid
+		// or essentially a no-op.
+		if !c.filtered(u) {
+			continue
+		}
+		if c.cache.Exists(u.String()) {
+			c.assignFilterMetric(u)
+			continue
+		}
+
+		// Increment the gauge
+		c.gauge.Increment()
+		go func(u *url.URL) { c.stack <- u }(u)
+	}
+
+	go c.gauge.Decrement()
 }
 
 func (c *Crawler) getRobotsGroup(u *url.URL) *robotstxt.Group {

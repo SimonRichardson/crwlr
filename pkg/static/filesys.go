@@ -17,7 +17,7 @@ import (
 // TemplateFS returns a http.FileSystem for embedded assets and templates. This
 // filesystem wraps the `github.com/mjibson/esc` API to provide a way to quickly
 // load templates from the local file system and also use embedded files within
-// the binary once distributed.
+// the binary once packaged.
 // If useLocal is true, the filesystem's content are used instead.
 func TemplateFS(useLocal bool, logger log.Logger) http.FileSystem {
 	var fs http.FileSystem
