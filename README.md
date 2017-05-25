@@ -20,10 +20,12 @@ would like to build the project.
 
 -----
 
-Quick guide to getting started:
+Quick guide to getting started, this assumes you've got the `$GOPATH` setup
+correctly and the gopath bin folder is in your `$PATH`:
 
 ```
-make all
+glide install
+make clean all
 cd dist
 
 ./crwlr crawl -addr="http://tomblomfield.com"
