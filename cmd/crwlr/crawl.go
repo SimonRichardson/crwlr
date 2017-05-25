@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"net"
 	"net/url"
 	"os"
@@ -147,10 +146,11 @@ func runCrawl(args []string) error {
 			return c.Run(u)
 		}, func(error) {
 			if *reportSitemap {
-				fmt.Println("HELLO")
+				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+				c.SiteReport().Write(w)
+				w.Flush()
 			}
 			if *reportMetrics {
-
 				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 				c.MetricsReport(time.Since(began)).Write(w)
 				w.Flush()

@@ -153,6 +153,22 @@ func (c *Crawler) MetricsReport(duration time.Duration) *report.MetricReport {
 	return report.NewMetricReport(duration, m)
 }
 
+// SiteReport returns the report of all the sites pages whist crawling
+func (c *Crawler) SiteReport() *report.SiteReport {
+	c.cache.mutex.RLock()
+	defer c.cache.mutex.RUnlock()
+
+	p := map[string]*report.Page{}
+	for k, v := range c.cache.metrics {
+		p[k] = &report.Page{
+			Links:  v.RefLinks,
+			Assets: v.RefAssetLinks,
+		}
+	}
+
+	return report.NewSiteReport(p)
+}
+
 func (c *Crawler) filtered(u *url.URL) bool {
 	for _, v := range c.filters {
 		if !v.Valid(u) {
@@ -207,6 +223,8 @@ func (c *Crawler) fetch(u *url.URL) {
 			c.assignFilterMetric(u)
 			continue
 		}
+
+		metric.AppendRefLink(u.String())
 
 		// Increment the gauge
 		c.gauge.Increment()

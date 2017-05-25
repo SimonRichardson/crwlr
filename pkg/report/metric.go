@@ -19,7 +19,7 @@ func NewMetricReport(duration time.Duration, rows map[string]*Row) *MetricReport
 }
 
 func (r *MetricReport) Write(w io.Writer) error {
-	rows, err := aggregate(r.rows)
+	rows, err := aggregateRows(r.rows)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ type Row struct {
 	TotalDuration, Duration time.Duration
 }
 
-// Add writes metrics to the column data
+// Add sums metrics to the column data
 func (c *Row) Add(m *Row) {
 	c.Requested += m.Requested
 	c.Received += m.Received
@@ -67,7 +67,7 @@ func (c *Row) Add(m *Row) {
 
 // Aggregate, takes a cache and removes any possible duplication and aggregates
 // the values.
-func aggregate(c map[string]*Row) (map[string]*Row, error) {
+func aggregateRows(c map[string]*Row) (map[string]*Row, error) {
 	m := map[string]*Row{}
 
 	for k, v := range c {

@@ -34,10 +34,10 @@ func TestRow(t *testing.T) {
 	})
 }
 
-func TestAggregation(t *testing.T) {
+func TestAggregation_Row(t *testing.T) {
 	t.Parallel()
 
-	t.Run("aggregate", func(t *testing.T) {
+	t.Run("aggregateRows", func(t *testing.T) {
 		c := map[string]*Row{}
 
 		c["http://a.com/page1"] = &Row{
@@ -47,7 +47,7 @@ func TestAggregation(t *testing.T) {
 			Received: 2,
 		}
 
-		report, err := aggregate(c)
+		report, err := aggregateRows(c)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,7 +69,7 @@ func TestAggregation(t *testing.T) {
 		}
 	})
 
-	t.Run("merge aggregate", func(t *testing.T) {
+	t.Run("merge aggregateRows", func(t *testing.T) {
 		c := map[string]*Row{}
 
 		c["http://a.com/page1?hello"] = &Row{
@@ -79,7 +79,7 @@ func TestAggregation(t *testing.T) {
 			Received: 2,
 		}
 
-		report, err := aggregate(c)
+		report, err := aggregateRows(c)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -93,7 +93,7 @@ func TestAggregation(t *testing.T) {
 		}
 	})
 
-	t.Run("merge aggregate duration", func(t *testing.T) {
+	t.Run("merge aggregateRows duration", func(t *testing.T) {
 		c := map[string]*Row{}
 
 		c["http://a.com/page1?hello"] = &Row{
@@ -105,7 +105,7 @@ func TestAggregation(t *testing.T) {
 			Duration: time.Minute,
 		}
 
-		report, err := aggregate(c)
+		report, err := aggregateRows(c)
 		if err != nil {
 			t.Fatal(err)
 		}

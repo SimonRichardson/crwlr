@@ -59,28 +59,33 @@ func (c *Cache) Set(v string, m *Metric) {
 
 // Metric holds some very simple primitive metric values for reporting.
 type Metric struct {
-	Requested, Received *Clock
-	Filtered, Errorred  *Clock
-	Duration            time.Duration
-	Robots              *robotstxt.RobotsData
+	mutex                   sync.Mutex
+	Requested, Received     *Clock
+	Filtered, Errorred      *Clock
+	Duration                time.Duration
+	Robots                  *robotstxt.RobotsData
+	RefLinks, RefAssetLinks []string
 }
 
 // NewMetric creates a new Metric
 func NewMetric() *Metric {
 	return &Metric{
-		Requested: NewClock(),
-		Received:  NewClock(),
-		Filtered:  NewClock(),
-		Errorred:  NewClock(),
-		Duration:  0,
+		Requested:     NewClock(),
+		Received:      NewClock(),
+		Filtered:      NewClock(),
+		Errorred:      NewClock(),
+		Duration:      0,
+		RefLinks:      []string{},
+		RefAssetLinks: []string{},
 	}
 }
 
-// WithRobots returns a new Metric with the associated robots data
-func (m *Metric) WithRobots(r *robotstxt.RobotsData) *Metric {
-	return &Metric{
-		Robots: r,
-	}
+// AppendRefLink adds a link to the metric in a safe way
+func (m *Metric) AppendRefLink(link string) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.RefLinks = append(m.RefLinks, link)
 }
 
 // Clock defines a metric for monitoring how many times something occurred.
