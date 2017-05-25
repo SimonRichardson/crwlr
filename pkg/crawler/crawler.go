@@ -12,6 +12,7 @@ import (
 
 	"github.com/SimonRichardson/crwlr/pkg/document"
 	"github.com/SimonRichardson/crwlr/pkg/peer"
+	"github.com/SimonRichardson/crwlr/pkg/report"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
@@ -131,9 +132,25 @@ func (c *Crawler) Close() {
 	<-q
 }
 
-// Report returns the report of all the things that have been cached, or missed.
-func (c *Crawler) Report(duration time.Duration) *Report {
-	return NewReport(duration, c.cache)
+// MetricsReport returns the report of all the metric things that have been
+// cached, missed or errorred.
+func (c *Crawler) MetricsReport(duration time.Duration) *report.MetricReport {
+	c.cache.mutex.RLock()
+	defer c.cache.mutex.RUnlock()
+
+	// Take a snapshot of the cache metrics
+	m := map[string]*report.Row{}
+	for k, v := range c.cache.metrics {
+		m[k] = &report.Row{
+			Requested: int(v.Requested.Time()),
+			Received:  int(v.Received.Time()),
+			Filtered:  int(v.Filtered.Time()),
+			Errorred:  int(v.Errorred.Time()),
+			Duration:  v.Duration,
+		}
+	}
+
+	return report.NewMetricReport(duration, m)
 }
 
 func (c *Crawler) filtered(u *url.URL) bool {

@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"net"
 	"net/url"
 	"os"
@@ -26,7 +27,8 @@ const (
 	defaultFilterSameDomain = true
 	defaultRobotsRequest    = true
 	defaultRobotsCrawlDelay = false
-	defaultReport           = true
+	defaultReportSitemap    = true
+	defaultReportMetrics    = false
 
 	defaultUserAgent      = "Mozilla/5.0 (compatible; crwlr/0.1; +http://crwlr.com)"
 	defaultUserAgentRobot = "Googlebot (crwlr/0.1)"
@@ -40,7 +42,8 @@ func runCrawl(args []string) error {
 
 		debug            = flagset.Bool("debug", false, "debug logging")
 		addr             = flagset.String("addr", defaultAddr, "addr to start crawling")
-		report           = flagset.Bool("report", defaultReport, "report the outcomes of the crawl")
+		reportSitemap    = flagset.Bool("report.sitemap", defaultReportSitemap, "report the sitemap of the crawl")
+		reportMetrics    = flagset.Bool("report.metrics", defaultReportMetrics, "report the metric outcomes of the crawl")
 		followRedirects  = flagset.Bool("follow-redirects", defaultFollowRedirects, "should the crawler follow redirects")
 		userAgent        = flagset.String("useragent.full", defaultUserAgent, "full user agent the crawler should use")
 		userAgentRobot   = flagset.String("useragent.robot", defaultUserAgentRobot, "robot user agent the crawler should use")
@@ -143,10 +146,13 @@ func runCrawl(args []string) error {
 		g.Add(func() error {
 			return c.Run(u)
 		}, func(error) {
-			if *report {
+			if *reportSitemap {
+				fmt.Println("HELLO")
+			}
+			if *reportMetrics {
 
 				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-				c.Report(time.Since(began)).Write(w)
+				c.MetricsReport(time.Since(began)).Write(w)
 				w.Flush()
 			}
 

@@ -1,4 +1,4 @@
-package crawler
+package report
 
 import (
 	"fmt"
@@ -7,18 +7,19 @@ import (
 	"time"
 )
 
-type Report struct {
+// MetricReport creates a report about the mertics of a crawl
+type MetricReport struct {
 	duration time.Duration
-	cache    *Cache
+	rows     map[string]*Row
 }
 
-// NewReport generates a report from the cache including a duration
-func NewReport(duration time.Duration, cache *Cache) *Report {
-	return &Report{duration, cache}
+// NewMetricReport generates a report from the cache including a duration
+func NewMetricReport(duration time.Duration, rows map[string]*Row) *MetricReport {
+	return &MetricReport{duration, rows}
 }
 
-func (r *Report) Write(w io.Writer) error {
-	rows, err := aggregate(r.cache)
+func (r *MetricReport) Write(w io.Writer) error {
+	rows, err := aggregate(r.rows)
 	if err != nil {
 		return err
 	}
@@ -42,18 +43,19 @@ func (r *Report) Write(w io.Writer) error {
 	return nil
 }
 
-type row struct {
+// Row is used for metric reporting
+type Row struct {
 	Requested, Received     int
 	Filtered, Errorred      int
 	TotalDuration, Duration time.Duration
 }
 
 // Add writes metrics to the column data
-func (c *row) Add(m *Metric) {
-	c.Requested += int(m.Requested.Time())
-	c.Received += int(m.Received.Time())
-	c.Filtered += int(m.Filtered.Time())
-	c.Errorred += int(m.Errorred.Time())
+func (c *Row) Add(m *Row) {
+	c.Requested += m.Requested
+	c.Received += m.Received
+	c.Filtered += m.Filtered
+	c.Errorred += m.Errorred
 
 	c.TotalDuration += m.Duration
 	c.Duration = c.TotalDuration
@@ -65,10 +67,10 @@ func (c *row) Add(m *Metric) {
 
 // Aggregate, takes a cache and removes any possible duplication and aggregates
 // the values.
-func aggregate(c *Cache) (map[string]*row, error) {
-	m := map[string]*row{}
+func aggregate(c map[string]*Row) (map[string]*Row, error) {
+	m := map[string]*Row{}
 
-	for k, v := range c.metrics {
+	for k, v := range c {
 		// We want to normalize the path (k), to remove parameters and hashes.
 		u, err := url.Parse(k)
 		if err != nil {
@@ -83,7 +85,7 @@ func aggregate(c *Cache) (map[string]*row, error) {
 		if r, ok := m[val]; ok {
 			r.Add(v)
 		} else {
-			r := &row{}
+			r := &Row{}
 			r.Add(v)
 			m[val] = r
 		}

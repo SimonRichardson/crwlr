@@ -1,32 +1,26 @@
-package crawler
+package report
 
 import (
 	"testing"
 
 	"time"
-
-	"github.com/go-kit/kit/log"
 )
 
 func TestRow(t *testing.T) {
 	t.Parallel()
 
 	t.Run("add", func(t *testing.T) {
-		r := row{}
+		r := &Row{}
 
-		{
-			m := NewMetric()
-			m.Received.Increment()
-			m.Duration = time.Second
-			r.Add(m)
-		}
-		{
-			m := NewMetric()
-			m.Received.Increment()
-			m.Errorred.Increment()
-			m.Duration = time.Second * 3
-			r.Add(m)
-		}
+		r.Add(&Row{
+			Received: 1,
+			Duration: time.Second,
+		})
+		r.Add(&Row{
+			Received: 1,
+			Errorred: 1,
+			Duration: time.Second * 3,
+		})
 
 		if r.Received != 2 {
 			t.Errorf("expected: %d, actual: %d", 2, r.Received)
@@ -44,18 +38,13 @@ func TestAggregation(t *testing.T) {
 	t.Parallel()
 
 	t.Run("aggregate", func(t *testing.T) {
-		c := NewCache(log.NewNopLogger())
+		c := map[string]*Row{}
 
-		{
-			m := NewMetric()
-			m.Received.Increment()
-			c.Set("http://a.com/page1", m)
+		c["http://a.com/page1"] = &Row{
+			Received: 1,
 		}
-		{
-			m := NewMetric()
-			m.Received.Increment()
-			m.Received.Increment()
-			c.Set("http://a.com/page2", m)
+		c["http://a.com/page2"] = &Row{
+			Received: 2,
 		}
 
 		report, err := aggregate(c)
@@ -81,20 +70,13 @@ func TestAggregation(t *testing.T) {
 	})
 
 	t.Run("merge aggregate", func(t *testing.T) {
-		c := NewCache(log.NewNopLogger())
+		c := map[string]*Row{}
 
-		{
-			m := NewMetric()
-			m.Received.Increment()
-			m.Received.Increment()
-			m.Received.Increment()
-			c.Set("http://a.com/page1?hello", m)
+		c["http://a.com/page1?hello"] = &Row{
+			Received: 3,
 		}
-		{
-			m := NewMetric()
-			m.Received.Increment()
-			m.Received.Increment()
-			c.Set("http://a.com/page1?world", m)
+		c["http://a.com/page1?world"] = &Row{
+			Received: 2,
 		}
 
 		report, err := aggregate(c)
@@ -112,22 +94,15 @@ func TestAggregation(t *testing.T) {
 	})
 
 	t.Run("merge aggregate duration", func(t *testing.T) {
-		c := NewCache(log.NewNopLogger())
+		c := map[string]*Row{}
 
-		{
-			m := NewMetric()
-			m.Received.Increment()
-			m.Received.Increment()
-			m.Received.Increment()
-			m.Duration = time.Second
-			c.Set("http://a.com/page1?hello", m)
+		c["http://a.com/page1?hello"] = &Row{
+			Received: 3,
+			Duration: time.Second,
 		}
-		{
-			m := NewMetric()
-			m.Received.Increment()
-			m.Received.Increment()
-			m.Duration = time.Minute
-			c.Set("http://a.com/page1?world", m)
+		c["http://a.com/page1?world"] = &Row{
+			Received: 2,
+			Duration: time.Minute,
 		}
 
 		report, err := aggregate(c)
