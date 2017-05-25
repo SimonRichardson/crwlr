@@ -22,6 +22,34 @@ var (
 	defaultAPIAddr = fmt.Sprintf("tcp://0.0.0.0:%d", defaultAPIPort)
 )
 
+type command func([]string) error
+
+func (c command) Run(args []string) {
+	if err := c(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+}
+
+func main() {
+	if len(os.Args) < 2 {
+		usage()
+		os.Exit(1)
+	}
+
+	var cmd command
+	switch strings.ToLower(os.Args[1]) {
+	case "static":
+		cmd = runStatic
+	case "crawl":
+		cmd = runCrawl
+	default:
+		usage()
+	}
+
+	cmd.Run(os.Args[2:])
+}
+
 func usage() {
 	fmt.Fprintf(os.Stderr, "USAGE\n")
 	fmt.Fprintf(os.Stderr, "  %s <mode> [flags]\n", os.Args[0])
@@ -66,32 +94,4 @@ func errorFor(fs *flag.FlagSet, name string, err error) error {
 	}
 
 	return err
-}
-
-type command func([]string) error
-
-func (c command) Run(args []string) {
-	if err := c(args); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
-}
-
-func main() {
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(1)
-	}
-
-	var cmd command
-	switch strings.ToLower(os.Args[1]) {
-	case "static":
-		cmd = runStatic
-	case "crawl":
-		cmd = runCrawl
-	default:
-		usage()
-	}
-
-	cmd.Run(os.Args[2:])
 }

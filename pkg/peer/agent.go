@@ -10,16 +10,36 @@ import (
 	"github.com/go-kit/kit/log"
 )
 
+// AgentType represents the type of user agent to send
+type AgentType int
+
+const (
+	// Host agent
+	Host AgentType = iota
+	// Robot agent
+	Robot
+)
+
 // UserAgent contains the different user agent options when contacting a host.
 type UserAgent struct {
-	Full, Robot string
+	Host, Robot string
 }
 
-// NewUserAgent creates a UserAgent from the full and robot agent strings
-func NewUserAgent(full, robot string) *UserAgent {
+// NewUserAgent creates a UserAgent from the host and robot agent strings
+func NewUserAgent(host, robot string) *UserAgent {
 	return &UserAgent{
-		Full:  full,
+		Host:  host,
 		Robot: robot,
+	}
+}
+
+// Type returns the user agent, depending on the type
+func (u *UserAgent) Type(a AgentType) string {
+	switch a {
+	case Robot:
+		return u.Robot
+	default:
+		return u.Host
 	}
 }
 
@@ -40,7 +60,7 @@ func NewAgent(client *http.Client, userAgent *UserAgent, logger log.Logger) *Age
 }
 
 // Request a url using the client and the given peer.
-func (a *Agent) Request(ctx *AgentContext) (*http.Response, error) {
+func (a *Agent) Request(ctx *AgentContext, t AgentType) (*http.Response, error) {
 	req, err := http.NewRequest("GET", ctx.URL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -48,7 +68,7 @@ func (a *Agent) Request(ctx *AgentContext) (*http.Response, error) {
 
 	ctx.With(context.WithTimeout(req.Context(), ctx.Timeout))
 
-	req.Header.Set("User-Agent", a.userAgent.Full)
+	req.Header.Set("User-Agent", a.userAgent.Type(t))
 	return a.client.Do(req)
 }
 

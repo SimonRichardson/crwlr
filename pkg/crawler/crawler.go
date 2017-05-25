@@ -107,8 +107,8 @@ loop:
 				}
 			}
 
-			// We can run parallel now, as we've taken into consideration the
-			// crawl delay.
+			// We can run this in a concurrent way now, as we've taken into
+			// consideration the crawl delay.
 			go c.fetch(v)
 
 		case q := <-c.stop:
@@ -165,7 +165,7 @@ func (c *Crawler) fetch(u *url.URL) {
 
 	level.Debug(c.logger).Log("url", str)
 
-	body, err := c.request(u, checkResponseStatus)
+	body, err := c.request(u, peer.Host, checkResponseStatus)
 	if err != nil {
 		metric.Errorred.Increment()
 		return
@@ -215,20 +215,13 @@ func (c *Crawler) getRobotsGroup(u *url.URL) *robotstxt.Group {
 	return group
 }
 
-func checkResponseStatus(resp *http.Response) error {
-	if resp.StatusCode < 200 && resp.StatusCode >= 300 {
-		return errors.Errorf("bad status code: %s", resp.Status)
-	}
-	return nil
-}
-
 // Request a document and read it's response body
-func (c *Crawler) request(u *url.URL, fn func(*http.Response) error) (body []byte, err error) {
+func (c *Crawler) request(u *url.URL, agentType peer.AgentType, fn func(*http.Response) error) (body []byte, err error) {
 	agent := c.peers.Get().(*peer.Agent)
 	defer c.peers.Put(agent)
 
 	var resp *http.Response
-	if resp, err = agent.Request(peer.NewAgentContext(u)); err != nil {
+	if resp, err = agent.Request(peer.NewAgentContext(u), agentType); err != nil {
 		return
 	}
 
@@ -245,6 +238,13 @@ func (c *Crawler) request(u *url.URL, fn func(*http.Response) error) (body []byt
 	}
 
 	return
+}
+
+func checkResponseStatus(resp *http.Response) error {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return errors.Errorf("bad status code: %s", resp.Status)
+	}
+	return nil
 }
 
 func checkRobotsResponseStatus(resp *http.Response) error {
@@ -264,7 +264,7 @@ func (c *Crawler) requestRobots(u *url.URL) *Metric {
 		metric = NewMetric()
 	)
 
-	body, err = c.request(u, func(resp *http.Response) error {
+	body, err = c.request(u, peer.Robot, func(resp *http.Response) error {
 		statusCode = resp.StatusCode
 		return checkRobotsResponseStatus(resp)
 	})
