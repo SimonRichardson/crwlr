@@ -18,7 +18,7 @@ func NewReport(duration time.Duration, cache *Cache) *Report {
 }
 
 func (r *Report) Write(w io.Writer) error {
-	rows, err := compact(r.cache)
+	rows, err := aggregate(r.cache)
 	if err != nil {
 		return err
 	}
@@ -43,9 +43,9 @@ func (r *Report) Write(w io.Writer) error {
 }
 
 type row struct {
-	Requested, Received int
-	Filtered, Errorred  int
-	Duration            time.Duration
+	Requested, Received     int
+	Filtered, Errorred      int
+	TotalDuration, Duration time.Duration
 }
 
 // Add writes metrics to the column data
@@ -54,13 +54,18 @@ func (c *row) Add(m *Metric) {
 	c.Received += int(m.Received.Time())
 	c.Filtered += int(m.Filtered.Time())
 	c.Errorred += int(m.Errorred.Time())
+
+	c.TotalDuration += m.Duration
+	c.Duration = c.TotalDuration / time.Duration(c.Received)
 }
 
-func compact(c *Cache) (map[string]*row, error) {
+// Aggregate, takes a cache and removes any possible duplication and aggregates
+// the values.
+func aggregate(c *Cache) (map[string]*row, error) {
 	m := map[string]*row{}
 
 	for k, v := range c.metrics {
-		// We want to normalize the path (k), to remove parameters.
+		// We want to normalize the path (k), to remove parameters and hashes.
 		u, err := url.Parse(k)
 		if err != nil {
 			return m, err
@@ -76,7 +81,6 @@ func compact(c *Cache) (map[string]*row, error) {
 		} else {
 			r := &row{}
 			r.Add(v)
-			r.Duration = v.Duration
 			m[val] = r
 		}
 	}

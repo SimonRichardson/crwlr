@@ -1,7 +1,9 @@
 package crawler
 
-import "testing"
-import "sync"
+import (
+	"sync"
+	"testing"
+)
 
 func TestGauge(t *testing.T) {
 	t.Parallel()

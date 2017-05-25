@@ -130,3 +130,69 @@ func TestClock(t *testing.T) {
 		}
 	})
 }
+
+func BenchmarkCacheExistsEmpty(b *testing.B) {
+	cache := NewCache(log.NewNopLogger())
+
+	b.ResetTimer()
+
+	var valid bool
+	for i := 0; i < b.N; i++ {
+		valid = cache.Exists("empty")
+	}
+
+	result = valid
+}
+
+func BenchmarkCacheExistsNonEmpty(b *testing.B) {
+	cache := NewCache(log.NewNopLogger())
+	cache.Set("nonempty", &Metric{})
+
+	b.ResetTimer()
+
+	var valid bool
+	for i := 0; i < b.N; i++ {
+		valid = cache.Exists("nonempty")
+	}
+
+	result = valid
+}
+
+func BenchmarkCacheGetEmpty(b *testing.B) {
+	cache := NewCache(log.NewNopLogger())
+
+	b.ResetTimer()
+
+	var err error
+	for i := 0; i < b.N; i++ {
+		_, err = cache.Get("empty")
+	}
+
+	result = err == nil
+}
+
+func BenchmarkCacheGetNonEmpty(b *testing.B) {
+	cache := NewCache(log.NewNopLogger())
+	cache.Set("nonempty", &Metric{})
+
+	b.ResetTimer()
+
+	var err error
+	for i := 0; i < b.N; i++ {
+		_, err = cache.Get("nonempty")
+	}
+
+	result = err == nil
+}
+
+func BenchmarkClock(b *testing.B) {
+	clock := NewClock()
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		clock.Increment()
+	}
+
+	result = clock.Time() == int64(b.N)
+}

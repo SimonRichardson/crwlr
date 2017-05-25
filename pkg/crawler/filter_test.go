@@ -63,3 +63,39 @@ func TestFilterAddr(t *testing.T) {
 		}
 	})
 }
+
+var result bool
+
+func BenchmarkAddrValid(b *testing.B) {
+	var (
+		u, _   = url.Parse("http://url.com")
+		filter = Addr(u)
+	)
+
+	b.ResetTimer()
+
+	var valid bool
+	for i := 0; i < b.N; i++ {
+		valid = filter.Valid(u)
+	}
+
+	result = valid
+}
+
+func BenchmarkAddrInvalid(b *testing.B) {
+	var (
+		x, _ = url.Parse("http://url.com")
+		y, _ = url.Parse("http://lru.com")
+
+		filter = Addr(x)
+	)
+
+	b.ResetTimer()
+
+	var valid bool
+	for i := 0; i < b.N; i++ {
+		valid = filter.Valid(y)
+	}
+
+	result = valid
+}
