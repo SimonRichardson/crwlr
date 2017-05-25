@@ -7,6 +7,7 @@
  - [Static](#static)
  - [Crawl](#crawl)
  - [Reports](#reports)
+ - [Tests](#tests)
  - [Improvements](#improvements)
 
 ### Getting started
@@ -134,6 +135,15 @@ http://0.0.0.0:7650              1                   1           1          0   
 
 Totals   Duration (ms)
          2436
+```
+
+### Tests
+
+Tests can be run using the following command, it also includes a series of
+benchmarking tests:
+
+```
+ go test -v -bench=. $(glide nv)
 ```
 
 ### Improvements
