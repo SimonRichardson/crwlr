@@ -2,11 +2,11 @@
 
 ## Command Crawler
 
- - [Getting started](#example)
+ - [Getting started](#getting-started)
  - [Introduction](#introduction)
  - [Static](#static)
  - [Crawl](#crawl)
- - [Reports](#Reports)
+ - [Reports](#reports)
  - [Improvements](#improvements)
 
 ### Getting started
