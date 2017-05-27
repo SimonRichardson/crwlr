@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"time"
 
+	"fmt"
+
 	"github.com/SimonRichardson/crwlr/pkg/crawler"
 	"github.com/SimonRichardson/crwlr/pkg/group"
 	"github.com/SimonRichardson/crwlr/pkg/peer"
@@ -146,12 +148,15 @@ func runCrawl(args []string) error {
 			return c.Run(u)
 		}, func(error) {
 			if *reportSitemap {
-				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', tabwriter.Debug)
 				c.SiteReport().Write(w)
 				w.Flush()
+				if *reportMetrics {
+					fmt.Fprintln(os.Stdout, "")
+				}
 			}
 			if *reportMetrics {
-				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', tabwriter.Debug)
 				c.MetricsReport(time.Since(began)).Write(w)
 				w.Flush()
 			}

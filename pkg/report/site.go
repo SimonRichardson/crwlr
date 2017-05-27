@@ -3,6 +3,7 @@ package report
 import (
 	"fmt"
 	"io"
+	"math"
 	"net/url"
 )
 
@@ -22,30 +23,38 @@ func (r *SiteReport) Write(w io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintln(w, "URL\tRef Links\t")
+	fmt.Fprintln(w, "URL\tRef Links\tRef Assets\t")
 	for k, v := range pages {
-		fmt.Fprintf(w, "%s\t \t\n", k)
+		fmt.Fprintf(w, "%s\t \t \t\n", k)
 
-		total := len(v.Links)
-		for k, v := range v.Links {
-			val := "├──"
-			if k == total-1 {
-				val = "└──"
+		var (
+			linkTotal  = len(v.Links)
+			assetTotal = len(v.Assets)
+			max        = int(math.Max(float64(linkTotal), float64(assetTotal)))
+			rows       = make([]*row, max)
+		)
+
+		for i := 0; i < max; i++ {
+			r := &row{}
+			if i < linkTotal {
+				r.Link = v.Links[i]
 			}
-			fmt.Fprintf(w, "%s\t%s\t\n", val, v)
+			if i < assetTotal {
+				r.Asset = v.Assets[i]
+			}
+			rows[i] = r
 		}
 
-		total = len(v.Assets)
-		for k, v := range v.Assets {
-			val := "├──"
-			if k == total-1 {
-				val = "└──"
-			}
-			fmt.Fprintf(w, "%s\t%s\t\n", val, v)
+		for _, v := range rows {
+			fmt.Fprintf(w, " \t%s\t%s\t\n", v.Link, v.Asset)
 		}
 	}
 
 	return nil
+}
+
+type row struct {
+	Link, Asset string
 }
 
 // Page records the state of a page
