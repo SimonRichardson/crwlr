@@ -24,9 +24,9 @@ func (r *MetricReport) Write(w io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintln(w, "URL\tAvg Duration (ms)\tRequested\tReceived\tFiltered\tErrorred\t")
+	fmt.Fprintln(w, " URL\t Avg Duration (ms)\t Requested\t Received\t Filtered\t Errorred\t")
 	for k, v := range rows {
-		fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\t%d\t\n",
+		fmt.Fprintf(w, " %s\t %d\t %d\t %d\t %d\t %d\t\n",
 			k,
 			v.Duration.Nanoseconds()/1e6,
 			v.Requested,
@@ -37,8 +37,8 @@ func (r *MetricReport) Write(w io.Writer) error {
 	}
 
 	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "Totals\tDuration (ms)\t")
-	fmt.Fprintf(w, "\t%d\t\n", r.duration.Nanoseconds()/1e6)
+	fmt.Fprintln(w, " Totals\t Duration (ms)\t")
+	fmt.Fprintf(w, " \t %d\t\n", r.duration.Nanoseconds()/1e6)
 
 	return nil
 }

@@ -23,9 +23,9 @@ func (r *SiteReport) Write(w io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintln(w, "URL\tRef Links\tRef Assets\t")
+	fmt.Fprintln(w, " URL\t Ref Links\t Ref Assets\t")
 	for k, v := range pages {
-		fmt.Fprintf(w, "%s\t \t \t\n", k)
+		fmt.Fprintf(w, " %s\t \t \t\n", k)
 
 		var (
 			linkTotal  = len(v.Links)
@@ -46,7 +46,7 @@ func (r *SiteReport) Write(w io.Writer) error {
 		}
 
 		for _, v := range rows {
-			fmt.Fprintf(w, " \t%s\t%s\t\n", v.Link, v.Asset)
+			fmt.Fprintf(w, " \t %s\t %s\t\n", v.Link, v.Asset)
 		}
 	}
 
