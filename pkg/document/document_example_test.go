@@ -37,10 +37,10 @@ func ExampleDocument_Walk_Links() {
 	}
 
 	doc := document.NewDocument(u, node, log.NewNopLogger())
-	doc.WalkLinks(func(url *url.URL) error {
+	doc.Walk(document.Links(func(url *url.URL) error {
 		fmt.Printf("The url is: %s\n", url.String())
 		return nil
-	})
+	}))
 
 	// Output:
 	// The url is: http://url.com/link

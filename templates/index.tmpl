@@ -2,6 +2,9 @@
 <html>
 <head>
 <title>{{.Title}}</title>
+{{ range $index, $value := .CSS }}
+<link rel="stylesheet" href="{{ $value.HREF }}" />
+{{ end }}
 </head>
 <body>
 
@@ -9,6 +12,10 @@
 
 {{ range $index, $value := .Links }}
 <a href="{{ $value.HREF }}" attr="{{ $value.ATTR }}">{{ $value.Text }}</a><br />
+{{ end }}
+
+{{ range $index, $value := .Images }}
+<img src="{{ $value.HREF }}" /><br />
 {{ end }}
 
 </body>

@@ -44,6 +44,14 @@ func TemplateFS(useLocal bool, logger log.Logger) http.FileSystem {
 						link{"http://google.com", "External Link", "External"},
 						link{"#anchor", "Anchor", "Anchor"},
 					},
+					CSS: []link{
+						link{HREF: "/index.css"},
+						link{HREF: "http://google.com/bootstrap.css"},
+					},
+					Images: []link{
+						link{HREF: "/image.jpg"},
+						link{HREF: "http://google.com/image.jpg"},
+					},
 				},
 			},
 			"/page1": &file{
@@ -57,6 +65,14 @@ func TemplateFS(useLocal bool, logger log.Logger) http.FileSystem {
 						link{"/page1", "Circular Reference", "Self"},
 						link{"/page2", "Page 2", "Page 2"},
 						link{"/index", "Index", "Index"},
+					},
+					CSS: []link{
+						link{HREF: "/index1.css"},
+						link{HREF: "http://google.com/bootstrap.css"},
+					},
+					Images: []link{
+						link{HREF: "/image2.jpg"},
+						link{HREF: "http://google.com/image.jpg"},
 					},
 				},
 			},
@@ -117,6 +133,8 @@ type file struct {
 type page struct {
 	Title, Heading string
 	Links          []link
+	CSS            []link
+	Images         []link
 }
 
 type link struct {

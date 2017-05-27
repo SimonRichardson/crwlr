@@ -34,6 +34,15 @@ func (r *SiteReport) Write(w io.Writer) error {
 			}
 			fmt.Fprintf(w, "%s\t%s\t\n", val, v)
 		}
+
+		total = len(v.Assets)
+		for k, v := range v.Assets {
+			val := "├──"
+			if k == total-1 {
+				val = "└──"
+			}
+			fmt.Fprintf(w, "%s\t%s\t\n", val, v)
+		}
 	}
 
 	return nil

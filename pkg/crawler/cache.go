@@ -88,6 +88,14 @@ func (m *Metric) AppendRefLink(link string) {
 	m.RefLinks = append(m.RefLinks, link)
 }
 
+// AppendRefAssetLinks adds a series of assets links in a safe way
+func (m *Metric) AppendRefAssetLinks(assets []string) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.RefAssetLinks = append(m.RefAssetLinks, assets...)
+}
+
 // Clock defines a metric for monitoring how many times something occurred.
 type Clock struct {
 	times int64

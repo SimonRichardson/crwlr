@@ -204,7 +204,7 @@ func (c *Crawler) fetch(u *url.URL) {
 		return
 	}
 
-	links, err := c.collect(body, u)
+	links, assets, err := c.collect(body, u)
 	if err != nil {
 		metric.Errorred.Increment()
 		return
@@ -212,6 +212,7 @@ func (c *Crawler) fetch(u *url.URL) {
 
 	metric.Received.Increment()
 	metric.Duration = time.Since(began)
+	metric.AppendRefAssetLinks(urlsToStrings(assets))
 
 	for _, u := range links {
 		// Preemptively remove any links that we know are invalid
@@ -219,12 +220,14 @@ func (c *Crawler) fetch(u *url.URL) {
 		if !c.filtered(u) {
 			continue
 		}
-		if c.cache.Exists(u.String()) {
+
+		str := u.String()
+		if c.cache.Exists(str) {
 			c.assignFilterMetric(u)
 			continue
 		}
 
-		metric.AppendRefLink(u.String())
+		metric.AppendRefLink(str)
 
 		// Increment the gauge
 		c.gauge.Increment()
@@ -325,23 +328,23 @@ func (c *Crawler) requestRobots(u *url.URL) *Metric {
 }
 
 // Collect all the links with in a document
-func (c *Crawler) collect(body []byte, u *url.URL) (links []*url.URL, err error) {
+func (c *Crawler) collect(body []byte, u *url.URL) (links []*url.URL, assets []*url.URL, err error) {
 	var node *html.Node
 	if node, err = html.Parse(bytes.NewBuffer(body)); err != nil {
 		return
 	}
 
 	doc := document.NewDocument(u, node, log.With(c.logger, "component", "document"))
-	err = doc.WalkLinks(func(url *url.URL) error {
-		// Ignore bad links, as we want the system to be resilient
-		if err != nil {
-			level.Error(c.logger).Log("err", err, "url", url)
+	err = doc.Walk(document.Compose(
+		document.Links(func(url *url.URL) error {
+			links = append(links, url)
 			return nil
-		}
-
-		links = append(links, url)
-		return nil
-	})
+		}),
+		document.Assets(func(url *url.URL) error {
+			assets = append(assets, url)
+			return nil
+		}),
+	))
 	return
 }
 
@@ -379,4 +382,12 @@ func (c *Gauge) Decrement() {
 // Value returns how much movement the Gauge has changed.
 func (c *Gauge) Value() int64 {
 	return atomic.LoadInt64(&c.value)
+}
+
+func urlsToStrings(a []*url.URL) []string {
+	res := make([]string, len(a))
+	for k, v := range a {
+		res[k] = v.String()
+	}
+	return res
 }
