@@ -100,7 +100,7 @@ crwlr crawl -addr="http://yourhosthere.com"
 Also available is a comprehensive `-help` section:
 
 ```
-crwlr crawl -help                                                                                                                                                                                   [13:00:02]
+crwlr crawl -help
 USAGE
   crawl [flags]
 
@@ -109,34 +109,77 @@ FLAGS
   -debug false                                                            debug logging
   -filter.same-domain true                                                filter other domains that aren't the same
   -follow-redirects true                                                  should the crawler follow redirects
-  -report true                                                            report the outcomes of the crawl
+  -report.metrics false                                                   report the metric outcomes of the crawl
+  -report.sitemap true                                                    report the sitemap of the crawl
   -robots.crawl-delay false                                               use the robots.txt crawl delay when crawling
   -robots.request true                                                    request the robots.txt when crawling
   -useragent.full Mozilla/5.0 (compatible; crwlr/0.1; +http://crwlr.com)  full user agent the crawler should use
   -useragent.robot Googlebot (crwlr/0.1)                                  robot user agent the crawler should use
+
 ```
 
 ### Reports
 
-When the command is done a report can be outputted (on by default), which can
+The reporting part of the command outputs two different types of information;
+sitemap reporting and metric reporting. Both reports can be turned off behind
+a series of flags.
+
+#### Sitemap Reports
+
+When the command is done the sitemap report can be outputted (on by default),
+which explains what was linked to what and also includes a list of static assets
+that was also linked in the file.
+
+A possible output is as follows:
+
+```
+dist/crwlr crawl
+ URL                              | Ref Links                   | Ref Assets                        |
+ http://0.0.0.0:7650/robots.txt   |                             |                                   |
+ http://0.0.0.0:7650              |                             |                                   |
+                                  | http://0.0.0.0:7650/index   | http://0.0.0.0:7650/index.css     |
+                                  | http://0.0.0.0:7650/page1   | http://google.com/bootstrap.css   |
+                                  | http://0.0.0.0:7650/bad     | http://0.0.0.0:7650/image.jpg     |
+                                  |                             | http://google.com/image.jpg       |
+ http://0.0.0.0:7650/index        |                             |                                   |
+                                  |                             | http://0.0.0.0:7650/index.css     |
+                                  |                             | http://google.com/bootstrap.css   |
+                                  |                             | http://0.0.0.0:7650/image.jpg     |
+                                  |                             | http://google.com/image.jpg       |
+ http://0.0.0.0:7650/page1        |                             |                                   |
+                                  | http://0.0.0.0:7650/page2   | http://0.0.0.0:7650/index1.css    |
+                                  |                             | http://google.com/bootstrap.css   |
+                                  |                             | http://0.0.0.0:7650/image2.jpg    |
+                                  |                             | http://google.com/image.jpg       |
+ http://0.0.0.0:7650/bad          |                             |                                   |
+ http://0.0.0.0:7650/page2        |                             |                                   |
+                                  | http://0.0.0.0:7650/page    |                                   |
+                                  | http://0.0.0.0:7650/page3   |                                   |
+ http://0.0.0.0:7650/page         |                             |                                   |
+ http://0.0.0.0:7650/page3        |                             |                                   |
+```
+
+#### Metric Reports
+
+When the command is done a report can be outputted (off by default), which can
 help explain what the crawl actually requested vs what it filtered for example.
 
 Example report using the `static` command is as follows:
 
 ```
-crwlr static -output.addr=true | crwlr crawl
-URL                              Avg Duration (ms)   Requested   Received   Filtered   Errorred
-http://0.0.0.0:7650/page1        0                   1           1          2          0
-http://0.0.0.0:7650/index        0                   1           1          3          0
-http://0.0.0.0:7650/bad          0                   1           1          1          0
-http://0.0.0.0:7650/page2        0                   1           1          0          0
-http://0.0.0.0:7650/page3        0                   1           0          1          0
-http://0.0.0.0:7650/page         0                   1           1          0          0
-http://0.0.0.0:7650/robots.txt   5                   1           1          0          0
-http://0.0.0.0:7650              1                   1           1          0          0
+dist/crwlr crawl -report.metrics=true
+ URL                              | Avg Duration (ms)   | Requested   | Received   | Filtered   | Errorred   |
+ http://0.0.0.0:7650/page         | 0                   | 1           | 0          | 0          | 1          |
+ http://0.0.0.0:7650/page3        | 0                   | 1           | 0          | 1          | 0          |
+ http://0.0.0.0:7650/robots.txt   | 5                   | 1           | 1          | 0          | 0          |
+ http://0.0.0.0:7650              | 1                   | 1           | 1          | 0          | 0          |
+ http://0.0.0.0:7650/index        | 0                   | 1           | 1          | 3          | 0          |
+ http://0.0.0.0:7650/page1        | 1                   | 1           | 1          | 2          | 0          |
+ http://0.0.0.0:7650/bad          | 0                   | 1           | 0          | 1          | 1          |
+ http://0.0.0.0:7650/page2        | 0                   | 1           | 1          | 0          | 0          |
 
-Totals   Duration (ms)
-         2436
+ Totals   | Duration (ms)   |
+          | 9560            |
 ```
 
 ### Tests
@@ -154,3 +197,5 @@ Possible improvements:
 
  - Store the urls in a KVS so that a crawler can truly work distributed, esp. if
  the host is large or if it's allowed to crawl beyond the host.
+ - Potentially better strategies to walk assets at a later date to back fill the
+ metrics.
