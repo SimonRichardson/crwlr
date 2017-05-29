@@ -2,7 +2,6 @@ package crawler
 
 import (
 	"testing"
-
 	"testing/quick"
 
 	"github.com/SimonRichardson/crwlr/pkg/test"

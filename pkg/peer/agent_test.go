@@ -1,13 +1,11 @@
 package peer
 
 import (
-	"testing"
-	"testing/quick"
-
 	"net/http"
 	"net/http/httptest"
-
 	"net/url"
+	"testing"
+	"testing/quick"
 
 	"github.com/SimonRichardson/crwlr/pkg/test"
 	"github.com/go-kit/kit/log"

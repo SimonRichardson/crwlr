@@ -3,13 +3,10 @@ package crawler
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"sync"
 	"testing"
-
-	"net/http/httptest"
-
-	"net/url"
-
 	"testing/quick"
 
 	"github.com/SimonRichardson/crwlr/pkg/peer"
@@ -34,13 +31,18 @@ func TestCrawl_Collect(t *testing.T) {
 			body := fmt.Sprintf(`<a href="/%s">%s</a>`, a.String(), a.String())
 
 			c := NewCrawler(client, agent, false, false, logger)
-			links, err := c.collect([]byte(body), u)
+			links, assets, err := c.collect([]byte(body), u)
 			if err != nil {
 				t.Error(err)
 				return false
 			}
 
 			if expected, actual := 1, len(links); expected != actual {
+				t.Errorf("expected: %d, actual: %d", expected, actual)
+				return false
+			}
+
+			if expected, actual := 0, len(assets); expected != actual {
 				t.Errorf("expected: %d, actual: %d", expected, actual)
 				return false
 			}

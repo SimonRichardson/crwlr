@@ -2,7 +2,6 @@ package report
 
 import (
 	"testing"
-
 	"time"
 )
 

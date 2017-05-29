@@ -3,7 +3,6 @@ package peer
 import (
 	"context"
 	"net/http"
-
 	"net/url"
 	"time"
 

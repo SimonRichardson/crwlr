@@ -4,9 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"net"
-	"os"
-
 	"net/http"
+	"os"
 
 	"github.com/SimonRichardson/crwlr/pkg/group"
 	"github.com/SimonRichardson/crwlr/pkg/static"

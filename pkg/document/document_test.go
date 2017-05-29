@@ -6,9 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/net/html"
-
 	"github.com/go-kit/kit/log"
+	"golang.org/x/net/html"
 )
 
 func TestWalk(t *testing.T) {

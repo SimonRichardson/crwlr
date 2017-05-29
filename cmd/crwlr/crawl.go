@@ -3,17 +3,14 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
-	"text/tabwriter"
-
 	"strings"
-
-	"net/http"
+	"text/tabwriter"
 	"time"
-
-	"fmt"
 
 	"github.com/SimonRichardson/crwlr/pkg/crawler"
 	"github.com/SimonRichardson/crwlr/pkg/group"

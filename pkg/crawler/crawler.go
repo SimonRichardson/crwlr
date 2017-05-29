@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"sync"
 	"sync/atomic"
-
 	"time"
 
 	"github.com/SimonRichardson/crwlr/pkg/document"
