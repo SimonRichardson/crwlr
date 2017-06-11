@@ -28,7 +28,7 @@ glide install
 make clean all
 cd dist
 
-./crwlr crawl -addr="http://tomblomfield.com"
+./crwlr crawl -addr="http://google.com"
 ```
 
 ### Introduction
